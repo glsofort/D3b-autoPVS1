@@ -10,7 +10,7 @@ from pyhgvs.models import Transcript
 from maxentpy import maxent
 from maxentpy.maxent import load_matrix5, load_matrix3
 from utils import contained_in_bed
-# from read_data import genome_hg19, transcripts_hg19, domain_hg19, hotspot_hg19, curated_region_hg19
+from read_data_mod import genome_hg19, transcripts_hg19, domain_hg19, hotspot_hg19, curated_region_hg19
 from read_data_mod import genome_hg38, transcripts_hg38, domain_hg38, hotspot_hg38, curated_region_hg38
 
 

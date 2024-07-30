@@ -35,6 +35,22 @@ with open(config['DEFAULT']['gene_trans']) as f:
         gene_trans[gene] = trans
         trans_gene[trans] = gene
 
+# HG19
+genome_hg19 = Fasta(config['HG19']['genome'])
+
+transcripts_hg19 = read_transcripts(open(config['HG19']['transcript']))
+
+domain_hg19 = create_bed_dict(config['HG19']['domain'])
+
+hotspot_hg19 = create_bed_dict(config['HG19']['hotspot'])
+
+curated_region_hg19 = create_bed_dict(config['HG19']['curated_region'])
+
+exon_lof_popmax_hg19 = create_bed_dict(config['HG19']['exon_lof_popmax'])
+
+pathogenic_hg19 = read_pathogenic_site(config['HG19']['pathogenic_site'])
+
+# HG38
 genome_hg38 = Fasta(config['HG38']['genome'])
 
 transcripts_hg38 = read_transcripts(open(config['HG38']['transcript']))

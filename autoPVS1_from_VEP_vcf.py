@@ -130,7 +130,7 @@ def pick_transcript(record, csq_fields, summary):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--vep_vcf', help='VCF classify')
-    parser.add_argument('--genome_version', help='Currently only hg38 or GRCh38 supported')
+    parser.add_argument('--genome_version', help='hg38 or hg19')
     parser.add_argument('--version', action='version',
                         version='%(prog)s {version}'.format(version=__version__))
     args = parser.parse_args()
