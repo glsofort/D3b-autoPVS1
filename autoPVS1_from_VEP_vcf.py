@@ -141,52 +141,74 @@ def main():
     csq_fields = in_vcf.header.info['CSQ'].description.replace("Consequence annotations from Ensembl VEP. Format: ", "").split("|")
     print ("vcf_id",'SYMBOL','Feature','trans_name','consequence', 'strength_raw', 'strength','criterion', sep="\t")
     summary = { "canonical": 0, "pick": 0, "rank": 0, "length": 0 }
+
+    has_csq = True
+
     for record in in_vcf.fetch():
-        # Get representative transcript to score
-        transcript, first_picked, summary = pick_transcript(record, csq_fields, summary)
-        info = {}
-        for i in range(len(first_picked)):
-            info[csq_fields[i]] = first_picked[i]
-            # adjust this field to match behavior of original auto pvs1 script
-            if csq_fields[i] == 'HGVSp':
-                info[csq_fields[i]] = first_picked[i].replace('%3D', '=')
-
         vcfrecord = VCFRecord(record.contig.replace('chr', ''), str(record.pos), record.ref, record.alts[0])
-
-        consequence = vep_consequence_trans(info['Consequence'])
         vcf_id = "-".join([vcfrecord.chrom, str(vcfrecord.pos), vcfrecord.ref, vcfrecord.alt])
-        if consequence in lof_type and transcript:
-            lof_pvs1 = PVS1(vcfrecord, consequence, info['HGVSc'], info['HGVSp'], transcript, genome_version)
-            trans_name = lof_pvs1.transcript.full_name
+        
+        try:
+            # Get representative transcript to score
+            transcript, first_picked, summary = pick_transcript(record, csq_fields, summary)
+            info = {}
+            for i in range(len(first_picked)):
+                info[csq_fields[i]] = first_picked[i]
+                # adjust this field to match behavior of original auto pvs1 script
+                if csq_fields[i] == 'HGVSp':
+                    info[csq_fields[i]] = first_picked[i].replace('%3D', '=')
+
+            consequence = vep_consequence_trans(info['Consequence'])
+
+        except KeyError:
+            has_csq = False
+            print("No CSQ. vcf_id: {}".format("-".join([vcfrecord.chrom, str(vcfrecord.pos), vcfrecord.ref, vcfrecord.alt])), file=sys.stderr)
+
+
+        if not has_csq:
             print(vcf_id,
-                  info['SYMBOL'],
-                  info['Feature'],
-                  trans_name,
-                  lof_pvs1.consequence,
-                  lof_pvs1.strength_raw.name,
-                  lof_pvs1.strength.name,
-                  lof_pvs1.criterion,
-                  sep="\t")
-        elif consequence in lof_type:
-            print(vcf_id,
-                  info['SYMBOL'],
-                  info['Feature'],
-                  'not_canonical',
-                  consequence,
-                  'Unmet',
-                  'Unmet',
-                  'na',
-                  sep="\t")
+                'na',
+                'na',
+                'not_csq',
+                'na',
+                'Unmet',
+                'Unmet',
+                'na',
+                sep="\t")
         else:
-            print(vcf_id,
-                  info['SYMBOL'],
-                  info['Feature'],
-                  'not_lof',
-                  consequence,
-                  'Unmet',
-                  'Unmet',
-                  'na',
-                  sep="\t")
+            if consequence in lof_type and transcript:
+                lof_pvs1 = PVS1(vcfrecord, consequence, info['HGVSc'], info['HGVSp'], transcript, genome_version)
+                trans_name = lof_pvs1.transcript.full_name
+                print(vcf_id,
+                    info['SYMBOL'],
+                    info['Feature'],
+                    trans_name,
+                    lof_pvs1.consequence,
+                    lof_pvs1.strength_raw.name,
+                    lof_pvs1.strength.name,
+                    lof_pvs1.criterion,
+                    sep="\t")
+            elif consequence in lof_type:
+                print(vcf_id,
+                    info['SYMBOL'],
+                    info['Feature'],
+                    'not_canonical',
+                    consequence,
+                    'Unmet',
+                    'Unmet',
+                    'na',
+                    sep="\t")
+            else:
+                print(vcf_id,
+                    info['SYMBOL'],
+                    info['Feature'],
+                    'not_lof',
+                    consequence,
+                    'Unmet',
+                    'Unmet',
+                    'na',
+                    sep="\t")
+
     print("Summary of transcript pick categories: Canonical: {}, Rank: {}, Pick: {}, Length: {}".format(summary['canonical'], summary['rank'], summary['pick'], summary['length']), file=sys.stderr)
 
 if __name__ == '__main__':
