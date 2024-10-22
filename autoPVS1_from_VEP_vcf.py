@@ -13,7 +13,7 @@ A good definition of what a PVS1 Null variant is: https://www.baylorgenetics.com
 import sys
 import argparse
 import pysam
-from read_data_mod import transcripts_hg38
+from read_data_mod import transcripts_hg38, transcripts_hg19
 from pvs1 import PVS1
 from utils import get_transcript, vep_consequence_trans, VCFRecord
 __version__ = 'v2.0.0'
@@ -73,7 +73,7 @@ def tie_breaker(record, candidate_csqs, tx_candidates, pick, csq_fields, summary
     return tie_break_return
 
 
-def get_candidates(record_csq, csq_fields):
+def get_candidates(record_csq, csq_fields, transcripts):
     """
     Takes in a pysam csq record and the csq_fields list parsed from the record description.
     Returns a list of picked csqs, matching transcript objects, and the PICK csq
@@ -94,16 +94,16 @@ def get_candidates(record_csq, csq_fields):
         info_list = csq.split("|")
         refseq_id = info_list[refseq_index]
         if info_list[pick_index] == pick_value:
-            pick = (get_transcript(refseq_id, transcripts_hg38), info_list)
+            pick = (get_transcript(refseq_id, transcripts), info_list)
         if info_list[canon_idx] == canon_value and refseq_id != "":
-            check = get_transcript(refseq_id, transcripts_hg38)
+            check = get_transcript(refseq_id, transcripts)
             if check is not None:
                 candidate_csqs.append(info_list)
                 tx_candidates.append(check)
     return candidate_csqs, tx_candidates, pick
 
 
-def pick_transcript(record, csq_fields, summary):
+def pick_transcript(record, csq_fields, summary, genome_version):
     """
     Function to process a record and choose a representative transcript
     Does so by doing the following:
@@ -113,7 +113,9 @@ def pick_transcript(record, csq_fields, summary):
     4. If still multiple (meaning ranks are tied), use longest transcript length as defined by the reference
     5. If no hits from step 1 and 2, just revert to using PICK
     """
-    candidate_csqs, tx_candidates, pick = get_candidates(record.info['CSQ'], csq_fields)
+    transcripts = transcripts_hg19 if genome_version == 'hg19' else transcripts_hg38
+
+    candidate_csqs, tx_candidates, pick = get_candidates(record.info['CSQ'], csq_fields, transcripts)
     if len(candidate_csqs) == 1:
         summary['canonical'] += 1
         return_values =  tx_candidates[0], candidate_csqs[0], summary
@@ -150,7 +152,7 @@ def main():
         
         try:
             # Get representative transcript to score
-            transcript, first_picked, summary = pick_transcript(record, csq_fields, summary)
+            transcript, first_picked, summary = pick_transcript(record, csq_fields, summary, genome_version)
             info = {}
             for i in range(len(first_picked)):
                 info[csq_fields[i]] = first_picked[i]
