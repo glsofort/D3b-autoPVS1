@@ -83,7 +83,7 @@ def get_candidates(record_csq, csq_fields, transcripts):
     """
     canon_idx = csq_fields.index("CANONICAL")
     pick_index = csq_fields.index("PICK")
-    refseq_index = csq_fields.index('RefSeq')
+    refseq_index = csq_fields.index('Feature')
     pick_value = "1"
     canon_value = "YES"
     
