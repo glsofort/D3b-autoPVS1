@@ -179,16 +179,31 @@ def main():
                 sep="\t")
         else:
             if consequence in lof_type and transcript:
-                lof_pvs1 = PVS1(vcfrecord, consequence, info['HGVSc'], info['HGVSp'], transcript, genome_version)
-                trans_name = lof_pvs1.transcript.full_name
-                print(vcf_id,
+                try:
+                    lof_pvs1 = PVS1(vcfrecord, consequence, info['HGVSc'], info['HGVSp'], transcript, genome_version)
+                except:
+                    lof_pvs1 = None
+
+                if lof_pvs1 is not None:
+                    trans_name = lof_pvs1.transcript.full_name
+                    print(vcf_id,
+                        info['SYMBOL'],
+                        info['Feature'],
+                        trans_name,
+                        lof_pvs1.consequence,
+                        lof_pvs1.strength_raw.name,
+                        lof_pvs1.strength.name,
+                        lof_pvs1.criterion,
+                        sep="\t")
+                else:
+                    print(vcf_id,
                     info['SYMBOL'],
                     info['Feature'],
-                    trans_name,
-                    lof_pvs1.consequence,
-                    lof_pvs1.strength_raw.name,
-                    lof_pvs1.strength.name,
-                    lof_pvs1.criterion,
+                    'invalid',
+                    consequence,
+                    'Unmet',
+                    'Unmet',
+                    'na',
                     sep="\t")
             elif consequence in lof_type:
                 print(vcf_id,
