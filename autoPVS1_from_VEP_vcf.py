@@ -144,9 +144,9 @@ def main():
     print ("vcf_id",'SYMBOL','Feature','trans_name','consequence', 'strength_raw', 'strength','criterion', sep="\t")
     summary = { "canonical": 0, "pick": 0, "rank": 0, "length": 0 }
 
-    has_csq = True
 
     for record in in_vcf.fetch():
+        has_csq = True
         vcfrecord = VCFRecord(record.contig.replace('chr', ''), str(record.pos), record.ref, record.alts[0])
         vcf_id = "-".join([vcfrecord.chrom, str(vcfrecord.pos), vcfrecord.ref, vcfrecord.alt])
         
