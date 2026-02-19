@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # author: Jiguang Peng
 # created: 2019/6/27 17:54
@@ -10,8 +10,7 @@ from pyhgvs.models import Transcript
 from maxentpy import maxent
 from maxentpy.maxent import load_matrix5, load_matrix3
 from utils import contained_in_bed
-from read_data_mod import genome_hg19, transcripts_hg19, domain_hg19, hotspot_hg19, curated_region_hg19
-from read_data_mod import genome_hg38, transcripts_hg38, domain_hg38, hotspot_hg38, curated_region_hg38
+from read_data_mod import get_build_data
 
 
 matrix5 = load_matrix5()
@@ -36,19 +35,16 @@ class Splicing:
         if genome_version in ['hg19', 'GRCh37']:
             self.genome_version = 'hg19'
             self.vep_assembly = 'GRCh37'
-            self.genome = genome_hg19
-            self.transcripts = transcripts_hg19
-            self.domain = domain_hg19
-            self.hotspot = hotspot_hg19
-            self.curated_region = curated_region_hg19
         else:
             self.genome_version = 'hg38'
             self.vep_assembly = 'GRCh38'
-            self.genome = genome_hg38
-            self.transcripts = transcripts_hg38
-            self.domain = domain_hg38
-            self.hotspot = hotspot_hg38
-            self.curated_region = curated_region_hg38
+
+        build = get_build_data(self.genome_version)
+        self.genome = build['genome']
+        self.transcripts = build['transcripts']
+        self.domain = build['domain']
+        self.hotspot = build['hotspot']
+        self.curated_region = build['curated_region']
 
         self.type = 'NA'
         self.index = 'NA'

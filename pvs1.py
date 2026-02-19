@@ -4,9 +4,7 @@
 # datetime: 2019/6/27 21:54
 
 import re
-from read_data_mod import pvs1_levels
-from read_data_mod import genome_hg19, domain_hg19, hotspot_hg19, curated_region_hg19, exon_lof_popmax_hg19, pathogenic_hg19
-from read_data_mod import genome_hg38, domain_hg38, hotspot_hg38, curated_region_hg38, exon_lof_popmax_hg38, pathogenic_hg38
+from read_data_mod import pvs1_levels, get_build_data
 from strength import Strength
 from splicing import Splicing
 from utils import contained_in_bed
@@ -39,21 +37,18 @@ class PVS1:
         if genome_version in ['hg19', 'GRCh37']:
             self.genome_version = 'hg19'
             self.vep_assembly = 'GRCh37'
-            self.genome = genome_hg19
-            self.domain = domain_hg19
-            self.hotspot = hotspot_hg19
-            self.curated_region = curated_region_hg19
-            self.exon_lof_popmax = exon_lof_popmax_hg19
-            self.pathogenic_dict = pathogenic_hg19
         else:
             self.genome_version = 'hg38'
             self.vep_assembly = 'GRCh38'
-            self.genome = genome_hg38
-            self.domain = domain_hg38
-            self.hotspot = hotspot_hg38
-            self.curated_region = curated_region_hg38
-            self.exon_lof_popmax = exon_lof_popmax_hg38
-            self.pathogenic_dict = pathogenic_hg38
+
+        build = get_build_data(self.genome_version)
+        self.genome = build['genome']
+        self.domain = build['domain']
+        self.hotspot = build['hotspot']
+        self.curated_region = build['curated_region']
+        self.exon_lof_popmax = build['exon_lof_popmax']
+        self.pathogenic_dict = build['pathogenic']
+
 
         self.altcodon = 'na'
         self.init_path = 0

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 # author: Jiguang Peng
 # created: 2019/6/27
@@ -13,15 +13,18 @@ from pyhgvs.utils import read_transcripts
 from utils import read_morbidmap, read_pathogenic_site, read_pvs1_levels, create_bed_dict, read_gene_alias
 
 
-BinPath = os.getcwd()
+BinPath = os.path.dirname(os.path.realpath(__file__))
 
 config = configparser.ConfigParser()
 config.read(BinPath+'/config.ini')
 
 for top in config:
     for key in config[top]:
+        if key == 'genome':
+            continue  # Genome files provided externally at runtime
         if not config[top][key].startswith('/'):
             config[top][key] = os.path.join(BinPath, config[top][key])
+
 pvs1_levels = read_pvs1_levels(config['DEFAULT']['pvs1levels'])
 
 gene_alias = read_gene_alias(config['DEFAULT']['gene_alias'])
@@ -35,32 +38,29 @@ with open(config['DEFAULT']['gene_trans']) as f:
         gene_trans[gene] = trans
         trans_gene[trans] = gene
 
-# HG19
-genome_hg19 = Fasta(config['HG19']['genome'])
+# Lazy loading: only load build-specific data when requested
+_build_cache = {}
 
-transcripts_hg19 = read_transcripts(open(config['HG19']['transcript']))
+def get_build_data(build):
+    """Load and cache build-specific resources (genome, transcripts, domains, etc.).
 
-domain_hg19 = create_bed_dict(config['HG19']['domain'])
+    The genome FASTA is resolved from the current working directory (caller stages it there),
+    while all other data files resolve from the script's install directory via config.ini.
+    """
+    build = build.upper()
+    if build not in _build_cache:
+        # Genome FASTA: resolve from cwd if relative (Nextflow stages it in work dir)
+        genome_path = config[build]['genome']
+        if not os.path.isabs(genome_path):
+            genome_path = os.path.join(os.getcwd(), genome_path)
 
-hotspot_hg19 = create_bed_dict(config['HG19']['hotspot'])
-
-curated_region_hg19 = create_bed_dict(config['HG19']['curated_region'])
-
-exon_lof_popmax_hg19 = create_bed_dict(config['HG19']['exon_lof_popmax'])
-
-pathogenic_hg19 = read_pathogenic_site(config['HG19']['pathogenic_site'])
-
-# HG38
-genome_hg38 = Fasta(config['HG38']['genome'])
-
-transcripts_hg38 = read_transcripts(open(config['HG38']['transcript']))
-
-domain_hg38 = create_bed_dict(config['HG38']['domain'])
-
-hotspot_hg38 = create_bed_dict(config['HG38']['hotspot'])
-
-curated_region_hg38 = create_bed_dict(config['HG38']['curated_region'])
-
-exon_lof_popmax_hg38 = create_bed_dict(config['HG38']['exon_lof_popmax'])
-
-pathogenic_hg38 = read_pathogenic_site(config['HG38']['pathogenic_site'])
+        _build_cache[build] = {
+            'genome': Fasta(genome_path),
+            'transcripts': read_transcripts(open(config[build]['transcript'])),
+            'domain': create_bed_dict(config[build]['domain']),
+            'hotspot': create_bed_dict(config[build]['hotspot']),
+            'curated_region': create_bed_dict(config[build]['curated_region']),
+            'exon_lof_popmax': create_bed_dict(config[build]['exon_lof_popmax']),
+            'pathogenic': read_pathogenic_site(config[build]['pathogenic_site']),
+        }
+    return _build_cache[build]

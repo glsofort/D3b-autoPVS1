@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Modified autoPVS1 wrapper script, as original did not work but overall scoring logic preserved.
 Overall goal is to classify "Null Variants".
@@ -13,7 +13,7 @@ A good definition of what a PVS1 Null variant is: https://www.baylorgenetics.com
 import sys
 import argparse
 import pysam
-from read_data_mod import transcripts_hg38, transcripts_hg19
+from read_data_mod import get_build_data
 from pvs1 import PVS1
 from utils import get_transcript, vep_consequence_trans, VCFRecord
 __version__ = 'v2.0.0'
@@ -86,7 +86,7 @@ def get_candidates(record_csq, csq_fields, transcripts):
     refseq_index = csq_fields.index('Feature')
     pick_value = "1"
     canon_value = "YES"
-    
+
     candidate_csqs = []
     tx_candidates = []
 
@@ -103,7 +103,7 @@ def get_candidates(record_csq, csq_fields, transcripts):
     return candidate_csqs, tx_candidates, pick
 
 
-def pick_transcript(record, csq_fields, summary, genome_version):
+def pick_transcript(record, csq_fields, summary, transcripts):
     """
     Function to process a record and choose a representative transcript
     Does so by doing the following:
@@ -113,7 +113,6 @@ def pick_transcript(record, csq_fields, summary, genome_version):
     4. If still multiple (meaning ranks are tied), use longest transcript length as defined by the reference
     5. If no hits from step 1 and 2, just revert to using PICK
     """
-    transcripts = transcripts_hg19 if genome_version == 'hg19' else transcripts_hg38
 
     candidate_csqs, tx_candidates, pick = get_candidates(record.info['CSQ'], csq_fields, transcripts)
     if len(candidate_csqs) == 1:
@@ -144,15 +143,18 @@ def main():
     print ("vcf_id",'SYMBOL','Feature','trans_name','consequence', 'strength_raw', 'strength','criterion', sep="\t")
     summary = { "canonical": 0, "pick": 0, "rank": 0, "length": 0 }
 
+    build = get_build_data(genome_version)
+    transcripts = build['transcripts']
+
 
     for record in in_vcf.fetch():
         has_csq = True
         vcfrecord = VCFRecord(record.contig.replace('chr', ''), str(record.pos), record.ref, record.alts[0])
         vcf_id = "-".join([vcfrecord.chrom, str(vcfrecord.pos), vcfrecord.ref, vcfrecord.alt])
-        
+
         try:
             # Get representative transcript to score
-            transcript, first_picked, summary = pick_transcript(record, csq_fields, summary, genome_version)
+            transcript, first_picked, summary = pick_transcript(record, csq_fields, summary, transcripts)
             info = {}
             for i in range(len(first_picked)):
                 info[csq_fields[i]] = first_picked[i]
